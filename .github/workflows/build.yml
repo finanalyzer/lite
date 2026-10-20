@@ -1,8 +1,8 @@
 name: Build & publish OpenBB Lite image
 
 # Builds the single-image OpenBB Lite distribution. The backend comes from
-# OpenBB-finance/openbb-hub (its backend/ dir) and the frontend from
-# OpenBB-finance/terminalpro. Both default to `develop` but can be pointed at
+# finanalyzer/openbb-hub (its backend/ dir) and the frontend from
+# finanalyzer/terminalpro. Both default to `develop` but can be pointed at
 # any branch, tag, SHA, or PR (use refs/pull/<N>/head) per run.
 #
 # Auth: a fine-grained PAT with Contents:Read on openbb-hub + terminalpro,
@@ -30,7 +30,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE: openbb-finance/lite
+  IMAGE: finanalyzer/lite
   # Defaults used by the `push` trigger (workflow_dispatch overrides via inputs).
   DEFAULT_REF: develop
 
@@ -48,7 +48,7 @@ jobs:
       - name: Checkout terminalpro (frontend)
         uses: actions/checkout@v4
         with:
-          repository: OpenBB-finance/terminalpro
+          repository: finanalyzer/terminalpro
           ref: ${{ github.event.inputs.terminalpro_ref || env.DEFAULT_REF }}
           token: ${{ secrets.SOURCE_REPOS_PAT }}
           path: terminalpro
@@ -56,7 +56,7 @@ jobs:
       - name: Checkout openbb-hub (backend lives in backend/)
         uses: actions/checkout@v4
         with:
-          repository: OpenBB-finance/openbb-hub
+          repository: finanalyzer/openbb-hub
           ref: ${{ github.event.inputs.hub_ref || env.DEFAULT_REF }}
           token: ${{ secrets.SOURCE_REPOS_PAT }}
           submodules: false

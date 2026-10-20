@@ -19,6 +19,10 @@ FROM oven/bun:1 AS frontend-build
 
 ARG OPENBB_IMAGE_VARIANT=lite
 
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y python3 make g++ \
+    && rm -rf /var/lib/apt/lists/*
+
 ENV NODE_OPTIONS="--max-old-space-size=8192"
 
 WORKDIR /app

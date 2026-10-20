@@ -175,10 +175,10 @@ first, then rebuild the image (CI or `./build-local.sh`). The build log's
 
 ## Building the image
 
-This is a standalone repo: it holds the Dockerfile and container config, but the
-backend comes from `backend-api/` in this monorepo (standalone mirror: [`OpenBB-finance/openbb-hub`](https://github.com/OpenBB-finance/openbb-hub))
-(its `backend/` directory) and the frontend from
-[`OpenBB-finance/terminalpro`](https://github.com/OpenBB-finance/terminalpro).
+This is a standalone repo: it holds the Dockerfile and container config, while
+the backend comes from the `backend/` directory in
+[`finanalyzer/openbb-hub`](https://github.com/finanalyzer/openbb-hub) and the
+frontend from [`finanalyzer/terminalpro`](https://github.com/finanalyzer/terminalpro).
 The build assembles both source trees next to the Dockerfile, then builds.
 
 ### In CI (GitHub Actions)
@@ -187,12 +187,12 @@ The [`Build & publish`](./.github/workflows/build.yml) workflow checks out both
 source repos at a configurable ref and builds + pushes a multi-arch image to
 GHCR. Run it from the **Actions** tab (`workflow_dispatch`):
 
-- `hub_ref` / `terminalpro_ref` — default `develop`. Set either to a branch,
+- `hub_ref` / `terminalpro_ref` — default `main`. Set either to a branch,
   tag, commit SHA, or **a PR** via `refs/pull/<N>/head`.
 - `push_image` — uncheck to build without pushing.
 
-It authenticates to the (private) source repos with a fine-grained PAT stored
-as the `SOURCE_REPOS_PAT` secret (Contents: Read on both repos). The image push
+The source repos are public, so no additional secret is required. Set the
+`SOURCE_REPOS_PAT` secret only when checking out private refs. The image push
 uses the built-in `GITHUB_TOKEN`.
 
 ### Locally
@@ -201,14 +201,14 @@ Use [`build-local.sh`](./build-local.sh), which assembles the context the same
 way CI does and runs a single-arch `docker build --load`:
 
 ```bash
-# Both repos at develop (clones them into ./backend and ./terminalpro):
+# Both repos at main (clones them into ./backend and ./terminalpro):
 ./build-local.sh
 
 # Point either source at a PR / branch / SHA:
 ./build-local.sh --backend-branch refs/pull/42/head --workspace-branch my-feature-branch
 
 # Build the full image for AMD64:
-./build-local.sh --variant full --platform linux/amd64 --backend-branch develop --workspace-branch develop
+./build-local.sh --variant full --platform linux/amd64 --backend-branch main --workspace-branch main
 
 # Or build from checkouts you already have on disk (picks up local edits):
 ./build-local.sh --local   # defaults to the sibling ../backend-api and ../terminalpro directories
@@ -217,14 +217,42 @@ way CI does and runs a single-arch `docker build --load`:
 Prefer to do it by hand? Clone the two repos beside the Dockerfile and build:
 
 ```bash
-git clone -b develop --depth 1 https://github.com/OpenBB-finance/terminalpro.git terminalpro
-git clone -b develop --depth 1 https://github.com/OpenBB-finance/openbb-hub.git _hub
+git clone -b main --depth 1 https://github.com/finanalyzer/terminalpro.git terminalpro
+git clone -b main --depth 1 https://github.com/finanalyzer/openbb-hub.git _hub
 mv _hub/backend ./backend && rm -rf _hub
 DOCKER_BUILDKIT=1 docker build -f Dockerfile -t openbb/lite:latest .
 ```
 
 The assembled `backend/`, `terminalpro/`, and `_hub/` directories are
 git-ignored, so they won't pollute this repo.
+
+## Running and testing locally
+
+After building `openbb/lite:dev` with `./build-local.sh`, start it with Compose:
+
+```bash
+docker compose up -d
+docker compose ps
+```
+
+Compose checks that the web UI responds on port 3000. Open
+<http://localhost:3000> or run a quick HTTP smoke test:
+
+```bash
+curl -f http://localhost:3000/
+```
+
+To see startup output and retrieve the generated admin password:
+
+```bash
+docker compose logs -f lite
+docker compose exec lite credentials
+```
+
+The named `lite-data` volume keeps the database and generated credentials
+between restarts. Stop the container with `docker compose down`; to also erase
+its persisted data, run `docker compose down -v`. Set `OPENBB_LITE_PORT` to use
+a different host port, for example `OPENBB_LITE_PORT=8080 docker compose up -d`.
 
 ## What's inside the container
 
@@ -247,7 +275,7 @@ redis log to stdout/stderr so `docker logs` shows everything.
 | `nginx.conf.template` | Site config; `${PORT}` is substituted on start |
 | `render-frontend-config.sh` | Renders `/usr/share/nginx/html/config.js` from env |
 | `frontend.env` | Vite build-time env for the runtime SPA build |
-| `.github/workflows/build.yml` | CI (standalone-repo era, inert in this monorepo): assemble source, build & push to GHCR |
+| `.github/workflows/build.yml` | CI: assemble source, build & push to GHCR |
 | `build-local.sh` | Local build helper (assembles context, single-arch `--load`) |
 | `publish.sh` | Local multi-arch build + push to GHCR |
 | `VERSION` | Image version tag |

@@ -28,7 +28,7 @@
 #
 # Env overrides:
 #   IMAGE   image tag to build           (default openbb/<variant>:dev)
-#   BACKEND_REPO / WORKSPACE_REPO       git URLs (default the OpenBB-finance repos)
+#   BACKEND_REPO / WORKSPACE_REPO       git URLs (default the finanalyzer repos)
 #   BACKEND_BRANCH / WORKSPACE_BRANCH   branches, tags, SHAs, or pull request refs
 #   BACKEND_DIR / WORKSPACE_DIR         local source dirs for the --*-local flags
 # Flags:
@@ -41,10 +41,10 @@ set -euo pipefail
 IMAGE="${IMAGE:-}"
 IMAGE_VARIANT="lite"
 PLATFORM=""
-BACKEND_REPO="${BACKEND_REPO:-https://github.com/OpenBB-finance/openbb-hub.git}"
-WORKSPACE_REPO="${WORKSPACE_REPO:-https://github.com/OpenBB-finance/terminalpro.git}"
-BACKEND_BRANCH="${BACKEND_BRANCH:-develop}"
-WORKSPACE_BRANCH="${WORKSPACE_BRANCH:-develop}"
+BACKEND_REPO="${BACKEND_REPO:-https://github.com/finanalyzer/openbb-hub.git}"
+WORKSPACE_REPO="${WORKSPACE_REPO:-https://github.com/finanalyzer/terminalpro.git}"
+BACKEND_BRANCH="${BACKEND_BRANCH:-main}"
+WORKSPACE_BRANCH="${WORKSPACE_BRANCH:-main}"
 # Per-repo source: "clone" (fetch the ref) or "local" (copy from disk).
 BACKEND_SRC="clone"
 WORKSPACE_SRC="clone"

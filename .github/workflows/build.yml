@@ -2,22 +2,22 @@ name: Build & publish OpenBB Lite image
 
 # Builds the single-image OpenBB Lite distribution. The backend comes from
 # finanalyzer/openbb-hub (its backend/ dir) and the frontend from
-# finanalyzer/terminalpro. Both default to `develop` but can be pointed at
+# finanalyzer/terminalpro. Both default to `main` but can be pointed at
 # any branch, tag, SHA, or PR (use refs/pull/<N>/head) per run.
 #
-# Auth: a fine-grained PAT with Contents:Read on openbb-hub + terminalpro,
-# stored as the secret SOURCE_REPOS_PAT. The image is pushed to GHCR using the
-# built-in GITHUB_TOKEN (no PAT needed for the push).
+# Both source repositories are public, so GITHUB_TOKEN is sufficient.
+# SOURCE_REPOS_PAT can be set when checking out private refs. The image is
+# pushed to GHCR using the built-in GITHUB_TOKEN.
 
 on:
   workflow_dispatch:
     inputs:
       hub_ref:
         description: "openbb-hub ref for the backend (branch, tag, SHA, or refs/pull/<N>/head)"
-        default: develop
+        default: main
       terminalpro_ref:
         description: "terminalpro ref for the frontend (branch, tag, SHA, or refs/pull/<N>/head)"
-        default: develop
+        default: main
       push_image:
         description: "Push the image to GHCR (uncheck to build only)"
         type: boolean
@@ -32,7 +32,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE: finanalyzer/lite
   # Defaults used by the `push` trigger (workflow_dispatch overrides via inputs).
-  DEFAULT_REF: develop
+  DEFAULT_REF: main
 
 permissions:
   contents: read
@@ -50,7 +50,7 @@ jobs:
         with:
           repository: finanalyzer/terminalpro
           ref: ${{ github.event.inputs.terminalpro_ref || env.DEFAULT_REF }}
-          token: ${{ secrets.SOURCE_REPOS_PAT }}
+          token: ${{ secrets.SOURCE_REPOS_PAT || github.token }}
           path: terminalpro
 
       - name: Checkout openbb-hub (backend lives in backend/)
@@ -58,7 +58,7 @@ jobs:
         with:
           repository: finanalyzer/openbb-hub
           ref: ${{ github.event.inputs.hub_ref || env.DEFAULT_REF }}
-          token: ${{ secrets.SOURCE_REPOS_PAT }}
+          token: ${{ secrets.SOURCE_REPOS_PAT || github.token }}
           submodules: false
           path: _hub
 

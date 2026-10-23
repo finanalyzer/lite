@@ -10,7 +10,7 @@
 #
 # Build context: this repo's root, with backend/ (from openbb-hub) and
 # terminalpro/ assembled alongside the Dockerfile. See README.md / build-local.sh.
-#   docker build -f Dockerfile -t openbb/lite:latest .
+#   docker build -f Dockerfile -t openbblite/lite:latest .
 #
 ###############################################
 # Frontend — build terminalpro SPA in runtime mode

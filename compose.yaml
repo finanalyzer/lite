@@ -1,6 +1,6 @@
 services:
   lite:
-    image: openbb/lite:dev
+    image: openbblite/lite:dev
     pull_policy: never
     ports:
       - "${OPENBB_LITE_PORT:-3000}:3000"

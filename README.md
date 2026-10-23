@@ -11,7 +11,7 @@ Metabase-style quick start is genuinely one command.
 docker run -d -p 3000:3000 \
   -v openbb-data:/data \
   --name openbb \
-  openbb/lite:latest
+  openbblite/lite:latest
 ```
 
 That's it. Open <http://localhost:3000> and log in as
@@ -29,7 +29,7 @@ at the end of the startup logs (`docker logs openbb --tail 15`).
 To run on a different port (say 8080):
 
 ```bash
-docker run -d -p 8080:3000 -v openbb-data:/data --name openbb openbb/lite:latest
+docker run -d -p 8080:3000 -v openbb-data:/data --name openbb openbblite/lite:latest
 ```
 
 ## Overriding configuration
@@ -44,7 +44,7 @@ docker run -d -p 3000:3000 \
   -v openbb-data:/data \
   -e OPENBB_ADMIN_EMAIL=me@example.com \
   -e OPENBB_ADMIN_PASSWORD='super-secret' \
-  openbb/lite:latest
+  openbblite/lite:latest
 ```
 
 ### Bring your own database (Postgres / MySQL)
@@ -59,7 +59,7 @@ docker run -d -p 3000:3000 \
   -e WRITE_DB_PASSWORD=...\
   -e READ_DB_USER=openbb \
   -e READ_DB_PASSWORD=... \
-  --name openbb openbb/lite:latest
+  --name openbb openbblite/lite:latest
 ```
 
 (MySQL works the same way with `DATABASE_TYPE=mysql` and `DB_PORT=3306`.)
@@ -71,7 +71,7 @@ docker run -d -p 3000:3000 \
   -e REDIS_HOST=my-redis-host \
   -e REDIS_PORT=6379 \
   -e REDIS_PASS=... \
-  --name openbb openbb/lite:latest
+  --name openbb openbblite/lite:latest
 ```
 
 Redis still runs *inside* the container as well — it's harmless and lets
@@ -136,7 +136,7 @@ If you need finer control over the *overridable* fields, mount your own
 docker run -d -p 3000:3000 \
   -v $(pwd)/my-config.js:/usr/share/nginx/html/config.js:ro \
   -v openbb-data:/data \
-  openbb/lite:latest
+  openbblite/lite:latest
 ```
 
 ### Changing what Lite locks
@@ -184,16 +184,32 @@ The build assembles both source trees next to the Dockerfile, then builds.
 ### In CI (GitHub Actions)
 
 The [`Build & publish`](./.github/workflows/build.yml) workflow checks out both
-source repos at a configurable ref and builds + pushes a multi-arch image to
-GHCR. Run it from the **Actions** tab (`workflow_dispatch`):
+source repos at a configurable ref and builds a multi-arch image, publishing to
+GHCR and to Docker Hub when its secrets are configured. Run it from the
+**Actions** tab (`workflow_dispatch`):
 
 - `hub_ref` / `terminalpro_ref` — default `main`. Set either to a branch,
   tag, commit SHA, or **a PR** via `refs/pull/<N>/head`.
 - `push_image` — uncheck to build without pushing.
 
 The source repos are public, so no additional secret is required. Set the
-`SOURCE_REPOS_PAT` secret only when checking out private refs. The image push
+`SOURCE_REPOS_PAT` secret only when checking out private refs. GHCR publishing
 uses the built-in `GITHUB_TOKEN`.
+
+To also publish to Docker Hub, configure these repository **Actions secrets** in
+GitHub (`Settings` → `Secrets and variables` → `Actions`):
+
+- `DOCKERHUB_USERNAME` — `openbblite`, or another Docker Hub account/service
+  account with permission to push to `openbblite/lite`.
+- `DOCKERHUB_TOKEN` — a Docker Hub access token created with **Read & Write**
+  permissions for an account authorized to publish `openbblite/lite`.
+
+The workflow publishes the same version, commit-SHA, `latest`, and optional
+custom tags to both registries when these secrets are present. If they are
+absent, it continues to publish to GHCR only. Docker Hub tags use the
+`openbblite/lite` repository, matching the quick-start command above. Ensure that
+repository exists in Docker Hub and the account represented by the secrets can
+push to it.
 
 ### Locally
 
@@ -220,7 +236,7 @@ Prefer to do it by hand? Clone the two repos beside the Dockerfile and build:
 git clone -b main --depth 1 https://github.com/finanalyzer/terminalpro.git terminalpro
 git clone -b main --depth 1 https://github.com/finanalyzer/openbb-hub.git _hub
 mv _hub/backend ./backend && rm -rf _hub
-DOCKER_BUILDKIT=1 docker build -f Dockerfile -t openbb/lite:latest .
+DOCKER_BUILDKIT=1 docker build -f Dockerfile -t openbblite/lite:latest .
 ```
 
 The assembled `backend/`, `terminalpro/`, and `_hub/` directories are
@@ -228,7 +244,7 @@ git-ignored, so they won't pollute this repo.
 
 ## Running and testing locally
 
-After building `openbb/lite:dev` with `./build-local.sh`, start it with Compose:
+After building `openbblite/lite:dev` with `./build-local.sh`, start it with Compose:
 
 ```bash
 docker compose up -d

@@ -12,7 +12,7 @@ Usage: docker exec openbb openbb-import <archive.zip> [--force] [--describe-scop
 
   <archive.zip>      Path to the export, as seen from inside the container.
                      Mount it when starting the container:
-                         docker run ... -v /path/to/exports:/import openbb/lite
+                         docker run ... -v /path/to/exports:/import openbblite/lite
                      then pass /import/<file>.zip here.
 
   --force            Replace a previously imported copy of this account.
@@ -39,7 +39,7 @@ if [[ "$1" != "--describe-scope" ]]; then
     echo >&2
     echo "Did you mount the folder containing it? For example:" >&2
     echo "  docker run -d --name openbb -p 3000:3000 \\" >&2
-    echo "      -v openbb-data:/data -v /path/to/exports:/import openbb/lite" >&2
+    echo "      -v openbb-data:/data -v /path/to/exports:/import openbblite/lite" >&2
     echo "then pass /import/<file>.zip" >&2
     exit 1
   fi

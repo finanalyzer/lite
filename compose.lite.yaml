@@ -1,0 +1,99 @@
+# OpenBB Workspace Lite — single-container deployment (published image).
+#
+# Quick start:
+#   docker compose -f compose.lite.yaml up -d
+#   docker compose -f compose.lite.yaml logs -f openbb
+#   docker compose -f compose.lite.yaml exec openbb credentials   # prints admin login
+#
+# Open http://localhost:${OPENBB_LITE_PORT:-3000} and sign in with the printed
+# credentials (default admin@openbb.co; the password is generated on first start
+# and stored in the openbb-data volume at /data/secrets.env).
+#
+# Stop:              docker compose -f compose.lite.yaml down
+# Stop + wipe data:  docker compose -f compose.lite.yaml down -v
+#
+# Every value below can be overridden from the shell or an adjacent .env file.
+# Anything left empty falls back to the image's own default (or is generated on
+# first boot). See README.md "Overriding configuration".
+
+services:
+  openbb:
+    image: ${OPENBB_LITE_IMAGE:-ghcr.io/finanalyzer/lite:latest}
+    container_name: ${OPENBB_LITE_CONTAINER:-openbb}
+    # `latest` moves; re-pull so `up` actually picks up a new release.
+    pull_policy: always
+    restart: unless-stopped
+    # The image always listens on 3000 internally; only the host port changes.
+    ports:
+      - "${OPENBB_LITE_PORT:-3000}:3000"
+    volumes:
+      # SQLite DB, folder storage, redis dump and generated secrets.
+      - openbb-data:/data
+      # Optional: ship your own frontend runtime config (locked fields still win).
+      # - ./my-config.js:/usr/share/nginx/html/config.js:ro
+    environment:
+      # --- Admin account ---------------------------------------------------
+      # Leave the password empty to have the image generate one and persist it
+      # to /data/secrets.env (retrieve it with `... exec openbb credentials`).
+      OPENBB_ADMIN_EMAIL: ${OPENBB_ADMIN_EMAIL:-admin@openbb.co}
+      OPENBB_ADMIN_PASSWORD: ${OPENBB_ADMIN_PASSWORD:-}
+
+      # --- Frontend runtime config (README "Frontend runtime config") ------
+      BACKEND_URL: ${BACKEND_URL:-/api}
+      AI_API_URL: ${AI_API_URL:-}
+      PLATFORM_URL: ${PLATFORM_URL:-}
+      DATABASE_API_URL: ${DATABASE_API_URL:-}
+      AUTHENTICATION_SEND_USER_EMAIL_AS_HEADER: ${AUTHENTICATION_SEND_USER_EMAIL_AS_HEADER:-false}
+      AI_COPILOT_ENABLED: ${AI_COPILOT_ENABLED:-true}
+      AI_COPILOT_OPENBB_COPILOT: ${AI_COPILOT_OPENBB_COPILOT:-false}
+      AI_COPILOT_AI_ENHANCEMENTS: ${AI_COPILOT_AI_ENHANCEMENTS:-true}
+      UI_SHOW_COMPANION_MCP_MODE: ${UI_SHOW_COMPANION_MCP_MODE:-true}
+      UI_SHOW_MINIMIZE_WIDGET: ${UI_SHOW_MINIMIZE_WIDGET:-true}
+      UI_SHOW_CHART_GENERATION: ${UI_SHOW_CHART_GENERATION:-true}
+      UI_SHOW_CHANGELOG: ${UI_SHOW_CHANGELOG:-true}
+      UI_SHOW_COPILOT_SWITCHER: ${UI_SHOW_COPILOT_SWITCHER:-true}
+      UI_SHOW_MARKETPLACE: ${UI_SHOW_MARKETPLACE:-true}
+      MCP_DEFAULT_SERVER_ENABLED: ${MCP_DEFAULT_SERVER_ENABLED:-true}
+      DATA_ALLOW_HTML_JS_EXECUTION: ${DATA_ALLOW_HTML_JS_EXECUTION:-true}
+
+      # --- Secrets (optional) ----------------------------------------------
+      # Generated on first start and persisted to /data/secrets.env if unset.
+      # Set them only to bring your own; OPENBB_AUTH_TOKEN must be an HS256 JWT
+      # signed with JWT_SECRET (the image mints one if you only set JWT_SECRET).
+      # JWT_SECRET: ${JWT_SECRET:-}
+      # OPENBB_AES_KEY: ${OPENBB_AES_KEY:-}
+      # LOCAL_STORAGE_SECRET_KEY: ${LOCAL_STORAGE_SECRET_KEY:-}
+      # OPENBB_AUTH_TOKEN: ${OPENBB_AUTH_TOKEN:-}
+
+      # --- External database (optional; default is SQLite at /data/openbb.db)
+      # DATABASE_TYPE: ${DATABASE_TYPE:-sqlite}   # postgresql | mysql
+      # DB_HOST: ${DB_HOST:-}
+      # DB_PORT: ${DB_PORT:-5432}
+      # DB_NAME: ${DB_NAME:-openbb}
+      # WRITE_DB_USER: ${WRITE_DB_USER:-}
+      # WRITE_DB_PASSWORD: ${WRITE_DB_PASSWORD:-}
+      # READ_DB_USER: ${READ_DB_USER:-}
+      # READ_DB_PASSWORD: ${READ_DB_PASSWORD:-}
+
+      # --- External Redis (optional; an embedded one runs inside by default) --
+      # REDIS_HOST: ${REDIS_HOST:-127.0.0.1}
+      # REDIS_PORT: ${REDIS_PORT:-6379}
+      # REDIS_PASS: ${REDIS_PASS:-}
+
+      # Set DEBUG=1 to log which config values are locked by the Lite profile.
+      # DEBUG: "0"
+    healthcheck:
+      # The UI is served by nginx on 3000; python is guaranteed present (curl is not).
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3000/', timeout=5)"
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+    stop_grace_period: 30s
+
+volumes:
+  openbb-data:
